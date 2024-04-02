@@ -59,17 +59,19 @@ else
     case $shell in
         bash)
             echo "export PATH=\"$mango_dir/bin:\$PATH\"" >> ~/.bashrc
-            $mango_dir/bin/mango completion bash > /usr/local/etc/bash_completion.d/mango
+            mkdir -p ~/.bash_completion.d
+            $mango_dir/bin/mango completion bash > ~/.bash_completion.d/mango
             source ~/.bashrc
             echo "PATH modification and autocompletion added to .bashrc"
             ;;
         zsh)
             echo "export PATH=\"$mango_dir/bin:\$PATH\"" >> ~/.zshrc
-            $mango_dir/bin/mango completion zsh > /usr/local/share/zsh/site-functions/_mango
+            mkdir -p ~/.zsh/completions
+            $mango_dir/bin/mango completion zsh > ~/.zsh/completions/_mango
             source ~/.zshrc
             echo "PATH modification and autocompletion added to .zshrc"
             ;;
-        fish) 
+        fish)
             echo "set -gx PATH \"$mango_dir/bin\" \$PATH" >> ~/.config/fish/config.fish
             $mango_dir/bin/mango completion fish > ~/.config/fish/completions/mango.fish
             source ~/.config/fish/config.fish
