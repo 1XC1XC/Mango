@@ -12,11 +12,6 @@ quietly() {
   "$@" >/dev/null 2>&1
 }
 
-error() {
-  echo "Error: $1" >&2
-  exit 1
-}
-
 shell=$(basename "$SHELL")
 
 case $(uname -m) in
@@ -46,7 +41,7 @@ fi
 
 if command -v curl &>/dev/null; then
   curl -fsSL "$download_url" -o "$exe.tar.gz" || error "Failed to download Mango"
-else
+else 
   error "curl is required to download Mango. Please install it and run this script again."
 fi
 
@@ -61,25 +56,7 @@ update_shell_config() {
     if grep -q "^export PATH=.*$bin_dir" "$config_file"; then
         echo "PATH already includes $bin_dir in ~/${config_file##*/}"
     else
-        while true; do
-            read -p "Do you want to update your shell configuration file (~/${config_file##*/}) to include Mango in PATH? [y/N]: " choice </dev/tty
-            case "$choice" in
-                [yY]*)
-                    echo -e "\n# Add Mango to PATH\nexport PATH=\"$bin_dir:\$PATH\"" >>"$config_file"
-                    echo "Updated ~/${config_file##*/} with Mango PATH"
-                    updated=true
-                    break
-                    ;;
-                [nN]*)
-                    echo "Skipping shell configuration update."
-                    updated=false
-                    break
-                    ;;
-                *)
-                    echo "Invalid choice, please enter 'y' or 'n'"
-                    ;;
-            esac
-        done
+        echo -e "\nexport PATH=\"$bin_dir:\$PATH\"" >> "$config_file"
     fi
 }
 
@@ -87,11 +64,11 @@ case $shell in
 fish)
     config_file="$HOME/.config/fish/config.fish"
     mkdir -p "$(dirname "$config_file")"
-    update_shell_config "$config_file"
+    update_shell_config "$config_file" "set -gx PATH \"$bin_dir\" \$PATH"
     ;;
-zsh | bash)
-    config_file="$HOME/.${shell}rc"
-    update_shell_config "$config_file"
+zsh | bash) 
+    config_file="$HOME/.zshrc" 
+    update_shell_config "$config_file" "source $config_file"
     ;;
 *)
     error "Unsupported shell: $shell"
@@ -99,10 +76,5 @@ zsh | bash)
 esac
 
 echo "Mango installation completed successfully!"
-if [[ $updated = true ]]; then
-    echo "Please restart your terminal or run 'source ~/${config_file##*/}' to start using Mango."
-else
-    echo "You'll need to manually add Mango to your PATH by adding the following line to your shell configuration file (~/${config_file##*/}):"
-    echo "export PATH=\"$bin_dir:\$PATH\""
-fi
+echo "Please restart your terminal or run 'source ~/${config_file##*/}' to start using Mango."
 echo "You can then run 'mango --help' to get started."
