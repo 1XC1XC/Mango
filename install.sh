@@ -12,6 +12,11 @@ quietly() {
   "$@" >/dev/null 2>&1
 }
 
+error() {
+  echo "Error: $1" >&2
+  exit 1
+}
+
 shell=$(basename "$SHELL")
 
 case $(uname -m) in
@@ -41,7 +46,7 @@ fi
 
 if command -v curl &>/dev/null; then
   curl -fsSL "$download_url" -o "$exe.tar.gz" || error "Failed to download Mango"
-else 
+else
   error "curl is required to download Mango. Please install it and run this script again."
 fi
 
@@ -56,18 +61,25 @@ update_shell_config() {
     if grep -q "^export PATH=.*$bin_dir" "$config_file"; then
         echo "PATH already includes $bin_dir in ~/${config_file##*/}"
     else
-        read -p "Do you want to update your shell configuration file (~/${config_file##*/}) to include Mango in PATH? [y/N]: " choice
-        case "$choice" in
-            y|Y)
-                echo -e "\n# Add Mango to PATH\nexport PATH=\"$bin_dir:\$PATH\"" >>"$config_file"
-                echo "Updated ~/${config_file##*/} with Mango PATH"
-                updated=true
-                ;;
-            *)
-                echo "Skipping shell configuration update."
-                updated=false
-                ;;
-        esac
+        while true; do
+            read -p "Do you want to update your shell configuration file (~/${config_file##*/}) to include Mango in PATH? [y/N]: " choice
+            case "$choice" in
+                [yY]*)
+                    echo -e "\n# Add Mango to PATH\nexport PATH=\"$bin_dir:\$PATH\"" >>"$config_file"
+                    echo "Updated ~/${config_file##*/} with Mango PATH"
+                    updated=true
+                    break
+                    ;;
+                [nN]*)
+                    echo "Skipping shell configuration update."
+                    updated=false
+                    break
+                    ;;
+                *)
+                    echo "Invalid choice, please enter 'y' or 'n'"
+                    ;;
+            esac
+        done
     fi
 }
 
@@ -75,11 +87,11 @@ case $shell in
 fish)
     config_file="$HOME/.config/fish/config.fish"
     mkdir -p "$(dirname "$config_file")"
-    update_shell_config "$config_file" "set -gx PATH \"$bin_dir\" \$PATH"
+    update_shell_config "$config_file"
     ;;
-zsh | bash) 
-    config_file="$HOME/.zshrc" 
-    update_shell_config "$config_file" "source $config_file"
+zsh | bash)
+    config_file="$HOME/.${shell}rc"
+    update_shell_config "$config_file"
     ;;
 *)
     error "Unsupported shell: $shell"
