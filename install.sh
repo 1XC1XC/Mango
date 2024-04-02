@@ -62,7 +62,7 @@ update_shell_config() {
         echo "PATH already includes $bin_dir in ~/${config_file##*/}"
     else
         while true; do
-            read -p "Do you want to update your shell configuration file (~/${config_file##*/}) to include Mango in PATH? [y/N]: " choice
+            read -p "Do you want to update your shell configuration file (~/${config_file##*/}) to include Mango in PATH? [y/N]: " choice </dev/tty
             case "$choice" in
                 [yY]*)
                     echo -e "\n# Add Mango to PATH\nexport PATH=\"$bin_dir:\$PATH\"" >>"$config_file"
