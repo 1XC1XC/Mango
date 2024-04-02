@@ -58,7 +58,6 @@ update_shell_config() {
     else
         echo -e "\n# Add Mango to PATH\nexport PATH=\"$bin_dir:\$PATH\"" >>"$config_file"
         echo "Updated $config_file with Mango PATH"
-        echo "source $config_file"
     fi
 }
 
