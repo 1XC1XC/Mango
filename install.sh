@@ -61,21 +61,18 @@ else
             echo "export PATH=\"$mango_dir/bin:\$PATH\"" >> ~/.bashrc
             mkdir -p ~/.bash_completion.d
             $mango_dir/bin/mango completion bash > ~/.bash_completion.d/mango
-            source ~/.bashrc
-            echo "PATH modification and autocompletion added to .bashrc"
+            exec bash
             ;;
         zsh)
             echo "export PATH=\"$mango_dir/bin:\$PATH\"" >> ~/.zshrc
             mkdir -p ~/.zsh/completions
             $mango_dir/bin/mango completion zsh > ~/.zsh/completions/_mango
-            source ~/.zshrc
-            echo "PATH modification and autocompletion added to .zshrc"
+            exec zsh
             ;;
         fish)
             echo "set -gx PATH \"$mango_dir/bin\" \$PATH" >> ~/.config/fish/config.fish
             $mango_dir/bin/mango completion fish > ~/.config/fish/completions/mango.fish
-            source ~/.config/fish/config.fish
-            echo "PATH modification and autocompletion added to fish config"
+            exec fish
             ;;
         *)
             echo "Unsupported shell. Please add '$mango_dir/bin' to your PATH manually."
