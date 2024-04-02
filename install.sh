@@ -1,83 +1,85 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 mango_dir="$HOME/.mango"
+bin_dir="$mango_dir/bin"
+exe="$bin_dir/mango"
 
-echo "Installing Mango..."
-
-if [[ ! -d $mango_dir ]]; then
-    echo "Creating Mango directories..."
-    mkdir -p $mango_dir/bin $mango_dir/cache $mango_dir/version
-fi
-
-fetch_latest_release_url() {
-    GitURL="https://api.github.com/repos/1XC1XC/Mango/releases/latest"
-    arch=$(uname -m)
-
-    case $arch in
-        x86_64)
-            grep_arch="amd64"
-            ;;
-        i386|i686)
-            grep_arch="386"
-            ;;
-        arm64|aarch64)
-            grep_arch="arm64"
-            ;;
-        arm*)
-            grep_arch="arm"
-            ;;
-        *)
-            echo "Unsupported architecture: $arch"
-            exit 1
-            ;;
-    esac
-
-    download_url=$(curl -s $GitURL | grep "browser_download_url" | grep "linux" | grep "$grep_arch" | cut -d '"' -f 4)
-    echo $download_url
+info() {
+    echo "INFO: $*"
 }
 
-echo "Fetching the latest Mango release..."
-download_url=$(fetch_latest_release_url)
+error() {
+    echo "ERROR: $*" >&2
+    exit 1
+}
 
-echo "Downloading Mango..."
-curl -L $download_url -o mango_latest.tar.gz
+# Detect the user's shell
+shell=$(basename "$SHELL")
 
-echo "Extracting Mango..."
-tar -xzf mango_latest.tar.gz -C $mango_dir/bin
+# Detect the system architecture
+case $(uname -ms) in
+"Darwin x86_64") target="darwin-amd64" ;;
+"Darwin arm64") target="darwin-arm64" ;;
+"Linux aarch64") target="linux-arm64" ;;
+"Linux arm64") target="linux-arm64" ;;
+"Linux x86_64") target="linux-amd64" ;;
+*) error "Unsupported system: $(uname -ms)" ;;
+esac
 
-echo "Cleaning up..."
-rm mango_latest.tar.gz
+# Create the necessary directories
+mkdir -p "$bin_dir" || error "Failed to create $bin_dir directory"
 
-if [[ ":$PATH:" == *":$mango_dir/bin:"* ]]; then
-    echo "PATH already includes '$mango_dir/bin'"
-else
-    echo "Updating PATH and setting up autocompletion..."
+# Download the latest Mango release
+info "Downloading Mango for $target"
+release_url="https://github.com/1XC1XC/Mango/releases/latest/download/mango-$target.tar.gz"
+curl -fsSL "$release_url" -o "$exe.tar.gz" || error "Failed to download Mango from $release_url"
 
-    shell=$(basename $SHELL)
-    case $shell in
-        bash)
-            echo "export PATH=\"$mango_dir/bin:\$PATH\"" >> ~/.bashrc
-            mkdir -p ~/.bash_completion.d
-            $mango_dir/bin/mango completion bash > ~/.bash_completion.d/mango
-            exec bash
-            ;;
-        zsh)
-            echo "export PATH=\"$mango_dir/bin:\$PATH\"" >> ~/.zshrc
-            mkdir -p ~/.zsh/completions
-            $mango_dir/bin/mango completion zsh > ~/.zsh/completions/_mango
-            exec zsh
-            ;;
-        fish)
-            echo "set -gx PATH \"$mango_dir/bin\" \$PATH" >> ~/.config/fish/config.fish
-            $mango_dir/bin/mango completion fish > ~/.config/fish/completions/mango.fish
-            exec fish
-            ;;
-        *)
-            echo "Unsupported shell. Please add '$mango_dir/bin' to your PATH manually."
-            ;;
-    esac
-fi
+# Extract the downloaded archive
+info "Extracting Mango archive"
+tar -xzf "$exe.tar.gz" -C "$bin_dir" || error "Failed to extract Mango archive"
+rm "$exe.tar.gz"
 
-echo "Mango installation completed successfully!"
+# Make the Mango binary executable
+chmod +x "$exe" || error "Failed to set execute permission on Mango binary"
+
+# Function to update the shell configuration
+update_shell_config() {
+    local config_file="$1"
+    local source_command="$2"
+
+    if [[ -w $config_file ]]; then
+        echo "$source_command" >>"$config_file"
+        info "Updated $config_file with Mango PATH"
+        echo "source $config_file"
+    else
+        info "Manually add the following line to $config_file:"
+        info "$source_command"
+    fi
+}
+
+# Update the shell configuration based on the detected shell
+case $shell in
+fish)
+    config_file="$HOME/.config/fish/config.fish"
+    source_command="set -gx PATH \"$bin_dir\" \$PATH"
+    update_shell_config "$config_file" "$source_command"
+    ;;
+zsh)
+    config_file="$HOME/.zshrc"
+    source_command="export PATH=\"$bin_dir:\$PATH\""
+    update_shell_config "$config_file" "$source_command"
+    ;;
+bash)
+    config_file="$HOME/.bashrc"
+    source_command="export PATH=\"$bin_dir:\$PATH\""
+    update_shell_config "$config_file" "$source_command"
+    ;;
+*)
+    error "Unsupported shell: $shell"
+    ;;
+esac
+
+info "Mango installation completed successfully!"
+info "Run 'mango --help' to get started."
