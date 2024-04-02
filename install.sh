@@ -19,22 +19,43 @@ error() {
 shell=$(basename "$SHELL")
 
 # Detect the system architecture
-case $(uname -ms) in
-"Darwin x86_64") target="darwin-amd64" ;;
-"Darwin arm64") target="darwin-arm64" ;;
-"Linux aarch64") target="linux-arm64" ;;
-"Linux arm64") target="linux-arm64" ;;
-"Linux x86_64") target="linux-amd64" ;;
-*) error "Unsupported system: $(uname -ms)" ;;
+case $(uname -m) in
+x86_64) arch="amd64" ;;
+i386 | i686) arch="386" ;;
+arm64 | aarch64) arch="arm64" ;;
+arm*) arch="arm" ;;
+*) error "Unsupported architecture: $(uname -m)" ;;
 esac
+
+# Function to fetch the latest release information from the GitHub API
+fetch_latest_release() {
+    curl -s "https://api.github.com/repos/1XC1XC/Mango/releases/latest"
+}
+
+# Function to extract the download URL for the current architecture
+extract_download_url() {
+    grep "browser_download_url" |
+        grep "linux" |
+        grep "$arch" |
+        cut -d '"' -f 4
+}
 
 # Create the necessary directories
 mkdir -p "$bin_dir" || error "Failed to create $bin_dir directory"
 
+# Fetch the latest release information
+info "Fetching the latest Mango release"
+release_info=$(fetch_latest_release)
+
+# Extract the download URL for the current architecture
+download_url=$(echo "$release_info" | extract_download_url)
+if [[ -z $download_url ]]; then
+    error "Failed to find a suitable Mango release for your architecture"
+fi
+
 # Download the latest Mango release
-info "Downloading Mango for $target"
-release_url="https://github.com/1XC1XC/Mango/releases/latest/download/mango-$target.tar.gz"
-curl -fsSL "$release_url" -o "$exe.tar.gz" || error "Failed to download Mango from $release_url"
+info "Downloading Mango from $download_url"
+curl -fsSL "$download_url" -o "$exe.tar.gz" || error "Failed to download Mango"
 
 # Extract the downloaded archive
 info "Extracting Mango archive"
