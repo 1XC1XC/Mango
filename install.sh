@@ -4,6 +4,8 @@ set -euo pipefail
 
 mango_dir="$HOME/.mango"
 bin_dir="$mango_dir/bin"
+cache_dir="$mango_dir/cache"
+version_dir="$mango_dir/version"
 exe="$bin_dir/mango"
 
 info() {
@@ -34,14 +36,12 @@ fetch_latest_release() {
 
 # Function to extract the download URL for the current architecture
 extract_download_url() {
-    grep "browser_download_url" |
-        grep "linux" |
-        grep "$arch" |
-        cut -d '"' -f 4
+    grep "browser_download_url" | grep "linux" | grep "$arch" | cut -d '"' -f 4
 }
 
 # Create the necessary directories
-mkdir -p "$bin_dir" || error "Failed to create $bin_dir directory"
+info "Creating Mango directories"
+mkdir -p "$bin_dir" "$cache_dir" "$version_dir" || error "Failed to create Mango directories"
 
 # Fetch the latest release information
 info "Fetching the latest Mango release"
@@ -70,32 +70,30 @@ update_shell_config() {
     local config_file="$1"
     local source_command="$2"
 
-    if [[ -w $config_file ]]; then
-        echo "$source_command" >>"$config_file"
-        info "Updated $config_file with Mango PATH"
-        echo "source $config_file"
+    if grep -q "^export PATH=.*$bin_dir" "$config_file"; then
+        info "PATH already includes $bin_dir in $config_file"
     else
-        info "Manually add the following line to $config_file:"
-        info "$source_command"
+        echo -e "\n# Add Mango to PATH\nexport PATH=\"$bin_dir:\$PATH\"" >>"$config_file"
+        info "Updated $config_file with Mango PATH"
     fi
+
+    echo "source $config_file"
 }
 
 # Update the shell configuration based on the detected shell
 case $shell in
 fish)
     config_file="$HOME/.config/fish/config.fish"
-    source_command="set -gx PATH \"$bin_dir\" \$PATH"
-    update_shell_config "$config_file" "$source_command"
+    mkdir -p "$(dirname "$config_file")"
+    update_shell_config "$config_file" "set -gx PATH \"$bin_dir\" \$PATH"
     ;;
 zsh)
     config_file="$HOME/.zshrc"
-    source_command="export PATH=\"$bin_dir:\$PATH\""
-    update_shell_config "$config_file" "$source_command"
+    update_shell_config "$config_file" "source $config_file"
     ;;
 bash)
     config_file="$HOME/.bashrc"
-    source_command="export PATH=\"$bin_dir:\$PATH\""
-    update_shell_config "$config_file" "$source_command"
+    update_shell_config "$config_file" "source $config_file"
     ;;
 *)
     error "Unsupported shell: $shell"
@@ -103,4 +101,5 @@ bash)
 esac
 
 info "Mango installation completed successfully!"
-info "Run 'mango --help' to get started."
+info "Please restart your terminal or run 'source $config_file' to start using Mango."
+info "You can then run 'mango --help' to get started."
