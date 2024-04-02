@@ -54,10 +54,18 @@ update_shell_config() {
     config_file="$1"
 
     if grep -q "^export PATH=.*$bin_dir" "$config_file"; then
-        echo "PATH already includes $bin_dir in $config_file"
+        echo "PATH already includes $bin_dir in ~/${config_file##*/}"
     else
-        echo -e "\n# Add Mango to PATH\nexport PATH=\"$bin_dir:\$PATH\"" >>"$config_file"
-        echo "Updated $config_file with Mango PATH"
+        read -p "Do you want to update your shell configuration file (~/${config_file##*/}) to include Mango in PATH? [y/N]: " choice
+        case "$choice" in
+            y|Y)
+                echo -e "\n# Add Mango to PATH\nexport PATH=\"$bin_dir:\$PATH\"" >>"$config_file"
+                echo "Updated ~/${config_file##*/} with Mango PATH"
+                ;;
+            *)
+                echo "Skipping shell configuration update. You'll need to manually add Mango to your PATH."
+                ;;
+        esac
     fi
 }
 
@@ -77,5 +85,5 @@ zsh | bash)
 esac
 
 echo "Mango installation completed successfully!"
-echo "Please restart your terminal or run 'source $config_file' to start using Mango."
+echo "Please restart your terminal or run 'source ~/${config_file##*/}' to start using Mango."
 echo "You can then run 'mango --help' to get started."
