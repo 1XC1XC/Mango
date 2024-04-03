@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 const MangoVersion = "0.1.0"
@@ -31,18 +32,20 @@ func CLI() {
 			Run:     Install_CLI,
 		},
 		&cobra.Command{
-			Use:     "uninstall <version>",
-			Short:   "Remove Go versions",
-			Aliases: []string{"remove"},
-			Args:    cobra.ExactArgs(1),
-			Run:     Uninstall_CLI,
+			Use:               "uninstall <version>",
+			Short:             "Remove Go versions",
+			Aliases:           []string{"remove"},
+			Args:              cobra.ExactArgs(1),
+			Run:               Uninstall_CLI,
+			ValidArgsFunction: Version_ARG,
 		},
 		&cobra.Command{
-			Use:     "use <version>",
-			Short:   "Select Go version",
-			Aliases: []string{"set"},
-			Args:    cobra.ExactArgs(1),
-			Run:     Use_CLI,
+			Use:               "use <version>",
+			Short:             "Select Go version",
+			Aliases:           []string{"set"},
+			Args:              cobra.ExactArgs(1),
+			Run:               Use_CLI,
+			ValidArgsFunction: Version_ARG,
 		},
 		&cobra.Command{
 			Use:     "list",
@@ -73,7 +76,7 @@ func CLI() {
 }
 
 func Completion_CLI(cmd *cobra.Command, args []string) {
-    Root := cmd.Root()
+	Root := cmd.Root()
 	switch args[0] {
 	case "bash":
 		Root.GenBashCompletion(os.Stdout)
@@ -85,6 +88,22 @@ func Completion_CLI(cmd *cobra.Command, args []string) {
 		fmt.Println("Unsupported shell.")
 		os.Exit(1)
 	}
+}
+
+func Version_ARG(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	Versions, err := os.ReadDir(filepath.Join(MangoPath, "version"))
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+
+	var Valid []string
+	for _, Entry := range Versions {
+		if Entry.IsDir() && strings.HasPrefix(Entry.Name(), toComplete) {
+			Valid = append(Valid, Entry.Name())
+		}
+	}
+
+	return Valid, cobra.ShellCompDirectiveNoFileComp
 }
 
 func Version_CLI(cmd *cobra.Command, args []string) {

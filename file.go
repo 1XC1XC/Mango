@@ -283,12 +283,12 @@ func ExtractTarGz(ArchivePath string, TargetDir string, ExtractDirName string) e
 				return fmt.Errorf("ExtractTarGz: error copying file content: %w", err)
 			}
 
-            if isExecutable(FullPath) {
-                err = os.Chmod(FullPath, Header.FileInfo().Mode() | 0111) 
-                if err != nil {
-                    return fmt.Errorf("ExtractTarGz: error setting permissions: %w", err)
-                }
-            }
+			if isExecutable(FullPath) {
+				err = os.Chmod(FullPath, Header.FileInfo().Mode()|0111)
+				if err != nil {
+					return fmt.Errorf("ExtractTarGz: error setting permissions: %w", err)
+				}
+			}
 
 			PB.Add(1)
 		}
