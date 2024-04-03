@@ -67,35 +67,12 @@ func CLI() {
 			Hidden: true,
 			Run:    Completion_CLI,
 		},
-		&cobra.Command{
-			Use:    "test",
-			Args:   cobra.ExactArgs(1),
-			Run:    test,
-		},
 	)
 
 	if err := root.Execute(); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
-}
-
-func test(cmd *cobra.Command, args []string) {
-    toComplete := args[0]
-    Versions, err := os.ReadDir(filepath.Join(MangoPath, "version"))
-	if err != nil {
-        fmt.Println(" ERROR 1")
-		return
-    }
-
-	var Valid []string
-	for _, Entry := range Versions {
-		if Entry.IsDir() && strings.HasPrefix(Entry.Name(), toComplete) {
-			Valid = append(Valid, Entry.Name())
-		}
-	}
-
-    fmt.Println(Valid)
 }
 
 func Completion_CLI(cmd *cobra.Command, args []string) {
