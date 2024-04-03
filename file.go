@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/Masterminds/semver/v3"
 	"github.com/schollz/progressbar/v3"
 
 	"archive/tar"
@@ -11,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -130,17 +132,38 @@ func SwitchVersion(version string) error {
 }
 
 func AutoVersionSwitch() error {
-	Versions, err := os.ReadDir(filepath.Join(MangoPath, "version"))
+	Versions, err := GetVersions()
 	if err != nil {
-		return err
+		return fmt.Errorf("error reading versions directory: %w", err)
 	}
 
 	if len(Versions) == 1 {
-		Version := Versions[0].Name()
+		Version := Versions[0]
 		err = SwitchVersion(Version)
 		if err != nil {
+			return fmt.Errorf("error switching to version %s: %w", Version, err)
+		}
+		fmt.Printf("Go environment is using version %s\n", Version)
+	} else if len(Versions) > 1 {
+		_, err := GetVersion()
+		if err == nil {
 			return err
 		}
+
+		if !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+
+		Latest, err := GetLatestVersion()
+		if err != nil {
+			return fmt.Errorf("error determining latest version: %w", err)
+		}
+
+		err = SwitchVersion(Latest)
+		if err != nil {
+			return fmt.Errorf("error switching to latest version %s: %w", Latest, err)
+		}
+        fmt.Printf("Go environment is using the latest version installed: %s\n", Latest)
 	}
 
 	return nil
@@ -213,6 +236,40 @@ func GetVersion() (string, error) {
 	Version := filepath.Base(VersionDir)
 
 	return Version, nil
+}
+
+func GetLatestVersion() (string, error) {
+	Versions, err := GetVersions()
+	if err != nil {
+		return "", fmt.Errorf("Error fetching versions: %w", err)
+	}
+
+	sort.Slice(Versions, func(i, j int) bool {
+		v1, err1 := semver.NewVersion(Versions[i])
+		v2, err2 := semver.NewVersion(Versions[j])
+		if err1 != nil || err2 != nil {
+			return false
+		}
+		return v1.GreaterThan(v2)
+	})
+
+	return Versions[0], nil
+}
+
+func GetVersions() ([]string, error) {
+	Versions, err := os.ReadDir(filepath.Join(MangoPath, "version"))
+	if err != nil {
+		return nil, fmt.Errorf("error reading versions directory: %w", err)
+	}
+
+	var Valid []string
+	for _, Version := range Versions {
+		if Version.IsDir() {
+			Valid = append(Valid, Version.Name())
+		}
+	}
+
+	return Valid, nil
 }
 
 func ExtractVersion(Version string) error {

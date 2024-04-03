@@ -1,8 +1,9 @@
 module github.com/1XC1XC/Mango
 
-go 1.22.1
+go 1.22.2
 
 require (
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/schollz/progressbar/v3 v3.14.2
 	github.com/spf13/cobra v1.8.0
 )

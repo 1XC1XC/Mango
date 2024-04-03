@@ -25,11 +25,12 @@ func CLI() {
 	root.CompletionOptions.DisableDefaultCmd = true
 	root.AddCommand(
 		&cobra.Command{
-			Use:     "install <version>",
-			Short:   "Download Go versions",
-			Aliases: []string{"download"},
-			Args:    cobra.ExactArgs(1),
-			Run:     Install_CLI,
+			Use:       "install <version>",
+			Short:     "Download Go versions",
+			Aliases:   []string{"download"},
+			ValidArgs: []string{"latest"},
+			Args:      cobra.ExactArgs(1),
+			Run:       Install_CLI,
 		},
 		&cobra.Command{
 			Use:               "uninstall <version>",
@@ -91,17 +92,21 @@ func Completion_CLI(cmd *cobra.Command, args []string) {
 }
 
 func Version_ARG(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	Versions, err := os.ReadDir(filepath.Join(MangoPath, "version"))
+	Versions, err := GetVersions()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
 
 	var Valid []string
-	for _, Entry := range Versions {
-		if Entry.IsDir() && strings.HasPrefix(Entry.Name(), toComplete) {
-			Valid = append(Valid, Entry.Name())
+	for _, Version := range Versions {
+		if strings.HasPrefix(Version, toComplete) {
+			Valid = append(Valid, Version)
 		}
 	}
+    
+    if strings.Split(cmd.CommandPath(), " ")[1] == "use" {
+	    Valid = append(Valid, "latest")
+    }
 
 	return Valid, cobra.ShellCompDirectiveNoFileComp
 }
@@ -124,6 +129,15 @@ func Version_CLI(cmd *cobra.Command, args []string) {
 
 func Use_CLI(cmd *cobra.Command, args []string) {
 	Version := args[0]
+
+	if Version == "latest" {
+		LatestVersion, err := GetLatestVersion()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		Version = LatestVersion
+	}
 
 	if isVersionInstalled(Version) {
 		err := SwitchVersion(Version)
@@ -214,6 +228,11 @@ func Uninstall_CLI(cmd *cobra.Command, args []string) {
 		if err != nil {
 			fmt.Println("Error cleaning symlinks:", err)
 		}
+	}
+
+    err = AutoVersionSwitch()
+	if err != nil {
+		fmt.Println("Error auto-switching versions after download:", err)
 	}
 }
 
