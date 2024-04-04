@@ -71,17 +71,17 @@ case $shell in
 fish)
     config_file="$HOME/.config/fish/config.fish"
     update_shell_config "$config_file"
-    refresh_command="source $config_file"
+    refresh_command="source ~/.config/fish/config.fish"
     ;;
 zsh)
     config_file="$HOME/.zshrc"
     update_shell_config "$config_file"
-    refresh_command="source $config_file"
+    refresh_command="source ~/.zshrc"
     ;;
 bash)
     config_file="$HOME/.bashrc"
     update_shell_config "$config_file"
-    refresh_command="source $config_file"
+    refresh_command="source ~/.bashrc"
     ;;
 *)
     echo "Unsupported shell: $shell"
