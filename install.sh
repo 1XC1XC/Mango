@@ -52,51 +52,47 @@ chmod +x "$exe" || error "Failed to set execute permission on Mango binary"
 
 update_shell_config() {
     config_file="$1"
-
+    shell_config_dir=$(dirname "$config_file")
+    
+    mkdir -p "$shell_config_dir"
+    
     if grep -q "^export PATH=.*$bin_dir" "$config_file"; then
         echo "PATH already includes $bin_dir in ~/${config_file##*/}"
     else
-        while true; do
-            echo -n "Do you want to add Mango to your PATH in ~/${config_file##*/}? [Y/n] "
-            read -n 1 -r add_to_path
-            echo
-            case "$add_to_path" in
-                [Yy]* | "")
-                    echo -e "\nexport PATH=\"$bin_dir:\$PATH\"" >> "$config_file"
-                    echo "Added Mango to PATH in ~/${config_file##*/}"
-                    break
-                    ;;
-                [Nn]*)
-                    echo "Skipping addition of Mango to PATH"
-                    break
-                    ;;
-                *)
-                    echo "Invalid input. Please enter 'Y' or 'n'."
-                    ;;
-            esac
-        done
+        {
+            echo -e "\n# Mango"
+            echo "export PATH=\"$bin_dir:\$PATH\""
+        } >> "$config_file"
+        echo "Added $bin_dir to PATH in ~/${config_file##*/}"
     fi
 }
 
 case $shell in
 fish)
     config_file="$HOME/.config/fish/config.fish"
-    mkdir -p "$(dirname "$config_file")"
-    update_shell_config "$config_file" "set -gx PATH \"$bin_dir\" \$PATH"
+    update_shell_config "$config_file"
+    refresh_command="source $config_file"
     ;;
-zsh | bash) 
-    config_file="$HOME/.${shell}rc" 
-    update_shell_config "$config_file" "source $config_file"
+zsh)
+    config_file="$HOME/.zshrc"
+    update_shell_config "$config_file"
+    refresh_command="exec \$SHELL"
+    ;;
+bash)
+    config_file="$HOME/.bashrc"
+    update_shell_config "$config_file"
+    refresh_command="source $config_file"
     ;;
 *)
-    error "Unsupported shell: $shell"
+    echo "Unsupported shell: $shell"
+    echo "Please manually add $bin_dir to your PATH"
     ;;
 esac
 
 echo "Mango installation completed successfully!"
-if grep -q "^export PATH=.*$bin_dir" "$config_file"; then
-    echo "Please restart your terminal or run 'source ~/${config_file##*/}' to start using Mango."
-else
-    echo "To start using Mango, please add '$bin_dir' to your PATH."
+echo "To get started, run:"
+echo
+if [[ -n $refresh_command ]]; then
+    echo "  $refresh_command"
 fi
-echo "You can then run 'mango --help' to get started."
+echo "  mango --help"
