@@ -57,13 +57,13 @@ update_shell_config() {
     mkdir -p "$shell_config_dir"
     
     if grep -q "^export PATH=.*$bin_dir" "$config_file"; then
-        echo "PATH already includes $bin_dir in ~/${config_file##*/}"
+        echo "PATH already includes ~/.mango/bin in ~/${config_file##*/}"
     else
         {
             echo -e "\n# Mango"
             echo "export PATH=\"$bin_dir:\$PATH\""
         } >> "$config_file"
-        echo "Added $bin_dir to PATH in ~/${config_file##*/}"
+        echo "Added ~/.mango/bin to PATH in ~/${config_file##*/}"
     fi
 }
 
@@ -76,7 +76,7 @@ fish)
 zsh)
     config_file="$HOME/.zshrc"
     update_shell_config "$config_file"
-    refresh_command="exec \$SHELL"
+    refresh_command="source $config_file"
     ;;
 bash)
     config_file="$HOME/.bashrc"
@@ -85,7 +85,7 @@ bash)
     ;;
 *)
     echo "Unsupported shell: $shell"
-    echo "Please manually add $bin_dir to your PATH"
+    echo "Please manually add ~/.mango/bin to your PATH"
     ;;
 esac
 
