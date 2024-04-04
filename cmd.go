@@ -103,10 +103,10 @@ func Version_ARG(cmd *cobra.Command, args []string, toComplete string) ([]string
 			Valid = append(Valid, Version)
 		}
 	}
-    
-    if strings.Split(cmd.CommandPath(), " ")[1] == "use" {
-	    Valid = append(Valid, "latest")
-    }
+
+	if strings.Split(cmd.CommandPath(), " ")[1] == "use" {
+		Valid = append(Valid, "latest")
+	}
 
 	return Valid, cobra.ShellCompDirectiveNoFileComp
 }
@@ -230,7 +230,7 @@ func Uninstall_CLI(cmd *cobra.Command, args []string) {
 		}
 	}
 
-    err = AutoVersionSwitch()
+	err = AutoVersionSwitch()
 	if err != nil {
 		fmt.Println("Error auto-switching versions after download:", err)
 	}
@@ -247,6 +247,11 @@ func Install_CLI(cmd *cobra.Command, args []string) {
 		}
 
 		fmt.Printf("Go version %s is now installed.\n", latestVersion)
+
+		err = AutoVersionSwitch()
+		if err != nil {
+			fmt.Println("Error auto-switching versions after download:", err)
+		}
 		return
 	}
 
