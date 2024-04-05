@@ -139,6 +139,17 @@ func Use_CLI(cmd *cobra.Command, args []string) {
 		Version = LatestVersion
 	}
 
+	SymlinkVersion, err := GetVersion()
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		fmt.Println("Error unable to fetch the Go version")
+		return
+	}
+
+	if Version == SymlinkVersion {
+		fmt.Printf("Go environment is on version %s\n", Version)
+		return
+	}
+
 	if isVersionInstalled(Version) {
 		err := SwitchVersion(Version)
 		if err != nil {
@@ -146,12 +157,12 @@ func Use_CLI(cmd *cobra.Command, args []string) {
 			return
 		}
 
-		fmt.Printf("Go environment is using version %s\n", Version)
+		fmt.Printf("Go environment is now using version %s\n", Version)
 	} else {
 		if isVersion(Version) {
 			Valid, err := isValidVersion(Version)
 			if err != nil {
-				fmt.Println("Error checking version availability, please try again or check your internet connection.")
+				fmt.Println("Error checking version availability, try again or check your internet connection.")
 				return
 			}
 
@@ -219,6 +230,8 @@ func Uninstall_CLI(cmd *cobra.Command, args []string) {
 			if err != nil {
 				fmt.Println("Error auto-switching versions after uninstall:", err)
 			}
+		} else {
+			fmt.Println("Error unable to fetch the Go version")
 		}
 		return
 	}
