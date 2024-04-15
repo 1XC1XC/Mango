@@ -14,6 +14,19 @@ import (
 
 const MangoVersion = "0.1.0"
 
+var Install = &cobra.Command{
+	Use:       "install <version>",
+	Short:     "Download Go versions",
+	Aliases:   []string{"download"},
+	ValidArgs: []string{"latest"},
+	Args:      cobra.ExactArgs(1),
+	Run:       Install_CLI,
+}
+
+func init() { // why are flags so ugly should be applicated in the cobra.command?
+	Install.Flags().BoolP("use", "u", false, "Set Go environment after installation")
+}
+
 func CLI() {
 	root := &cobra.Command{
 		Use:   "mango",
@@ -24,14 +37,7 @@ func CLI() {
 	root.DisableFlagsInUseLine = false
 	root.CompletionOptions.DisableDefaultCmd = true
 	root.AddCommand(
-		&cobra.Command{
-			Use:       "install <version>",
-			Short:     "Download Go versions",
-			Aliases:   []string{"download"},
-			ValidArgs: []string{"latest"},
-			Args:      cobra.ExactArgs(1),
-			Run:       Install_CLI,
-		},
+		Install,
 		&cobra.Command{
 			Use:               "uninstall <version>",
 			Short:             "Remove Go versions",
@@ -265,37 +271,61 @@ func Install_CLI(cmd *cobra.Command, args []string) {
 		if err != nil {
 			fmt.Println("Error auto-switching versions after download:", err)
 		}
+	} else {
+		if isVersion(Version) {
+			if isVersionInstalled(Version) {
+				fmt.Printf("Go version %s is already installed.\n", Version)
+				return
+			}
+
+			Valid, err := isValidVersion(Version)
+			if err != nil {
+				fmt.Println("Error checking version availability:", err)
+				return
+			}
+
+			if !Valid {
+				fmt.Println("Invalid Go version:", Version)
+				return
+			}
+
+			err = DLGo(Version)
+			if err != nil {
+				fmt.Println("Error downloading Go version:", err)
+			}
+
+			fmt.Printf("Go version %s is now installed.\n", Version)
+		} else {
+			fmt.Println("Invalid Go version: use a specific version or 'latest' for the most recent version.")
+		}
+	}
+
+	Use, err := cmd.Flags().GetBool("use")
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
 
-	if isVersion(Version) {
-		if isVersionInstalled(Version) {
-			fmt.Printf("Go version %s is already installed.\n", Version)
-			return
+	if Use == true {
+		if Version == "latest" {
+			Version, err = ParseLatestVersion()
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
 		}
 
-		Valid, err := isValidVersion(Version)
+		err = SwitchVersion(Version)
 		if err != nil {
-			fmt.Println("Error checking version availability:", err)
+			fmt.Println(err)
 			return
 		}
 
-		if !Valid {
-			fmt.Println("Invalid Go version:", Version)
-			return
-		}
-
-		err = DLGo(Version)
-		if err != nil {
-			fmt.Println("Error downloading Go version:", err)
-		}
-
-		fmt.Printf("Go version %s is now installed.\n", Version)
-	} else {
-		fmt.Println("Invalid Go version: use a specific version or 'latest' for the most recent version.")
+		fmt.Printf("Go environment is now using version %s\n", Version)
+		return
 	}
 
-	err := AutoVersionSwitch()
+	err = AutoVersionSwitch()
 	if err != nil {
 		fmt.Println("Error auto-switching versions after download:", err)
 	}
