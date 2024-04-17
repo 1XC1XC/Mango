@@ -1,8 +1,7 @@
 # 🥭 Mango
 ### Go Version Manager
 Mango is a command-line utility for managing Go versions, facilitates efficient switching and maintenance of Go environments for developers.
-
-## Installation
+## Installation Linux
 To install Mango, run the following command in your terminal:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/1XC1XC/Mango/main/install.sh | bash
